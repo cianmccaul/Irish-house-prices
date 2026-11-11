@@ -2,7 +2,7 @@
 
 My Leaving Certificate Computer Science project: a Flask site that analyses how Irish house prices changed each year, region by region, using the Central Statistics Office's Residential Property Price Index.
 
-**Live:** _coming soon_
+**Live:** https://irish-house-prices.vercel.app
 
 ## What it does
 
