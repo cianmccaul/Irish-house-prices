@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>House prices in Ireland, {{ first }} to {{ last }}</title>
+  <meta name="description" content="How Irish house prices changed each year from {{ first }} to {{ last }}, by region: mean, median and mode, and a graph. A Leaving Certificate Computer Science project using CSO data.">
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="wrap bar">
+      <span class="brand"><img src="{{ url_for('static', filename='icon.svg') }}" alt="" width="28" height="28">House prices in Ireland</span>
+      <div class="toggles">
+        <label class="switch"><input type="checkbox" id="dark-toggle"><span class="track" aria-hidden="true"></span>Dark mode</label>
+        <label class="switch"><input type="checkbox" id="big-toggle"><span class="track" aria-hidden="true"></span>Bigger text</label>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+    <section class="intro">
+      <p class="eyebrow">Leaving Certificate Computer Science project</p>
+      <h1>How house prices changed in Ireland, {{ first }} to {{ last }}</h1>
+      <p class="lede">
+        Each January, the Central Statistics Office measures how much house prices changed over the past 12 months.
+        Pick a region to see its figures, and add up to four regions to the graph to compare them.
+      </p>
+    </section>
+
+    <section class="panel" aria-labelledby="pick-title">
+      <h2 id="pick-title">Choose a region</h2>
+      <div class="chips" role="group" aria-label="Regions">
+        {% for r in regions %}
+          <button type="button" class="chip{% if r == 'National' %} on{% endif %}" data-region="{{ r }}" aria-pressed="{{ 'true' if r == 'National' else 'false' }}">{{ r }}</button>
+        {% endfor %}
+      </div>
+      <p class="hint">The first region you pick is described below; up to four are drawn on the graph.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="stats-title" aria-live="polite">
+      <h2 id="stats-title">{{ national.region }}</h2>
+      <div class="stats">
+        <div class="stat"><span>Mean yearly change</span><b id="s-mean">{{ national.mean }}%</b></div>
+        <div class="stat"><span>Median</span><b id="s-median">{{ national.median }}%</b></div>
+        <div class="stat"><span>Mode</span><b id="s-mode">{% if national.mode %}{{ national.mode | join('%, ') }}%{% else %}None{% endif %}</b></div>
+        <div class="stat"><span>Overall since Jan {{ national.since }}</span><b id="s-overall">{{ '+' if national.overall > 0 }}{{ national.overall }}%</b></div>
+      </div>
+      <p class="facts" id="s-facts">
+        Biggest rise: <b>{{ national.best.change }}%</b> in {{ national.best.year }}.
+        Biggest fall: <b>{{ national.worst.change }}%</b> in {{ national.worst.year }}.
+      </p>
+      <details>
+        <summary>What do mean, median and mode tell us here?</summary>
+        <p>
+          The <b>mean</b> adds up every year's change and divides by the number of years. The <b>median</b> is the middle value once the
+          years are in order, so one very good or very bad year moves it less. The <b>mode</b> is the value that comes up most often;
+          most regions never repeat a figure, so they have no mode. "Overall" chains the yearly changes together to show how far prices
+          moved in total.
+        </p>
+      </details>
+    </section>
+
+    <section class="panel" aria-labelledby="graph-title">
+      <h2 id="graph-title">Graph</h2>
+      <img id="graph" src="{{ url_for('graph', region='National') }}" alt="Line graph of the yearly change in house prices for the chosen regions" width="990" height="506">
+    </section>
+
+    <section class="panel" aria-labelledby="table-title">
+      <h2 id="table-title">Year by year</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">January</th><th scope="col">Change on a year earlier</th></tr></thead>
+          <tbody id="s-years">
+            {% for y in national.years %}
+              <tr><td>{{ y.year }}</td><td class="{{ 'up' if y.change > 0 else 'down' if y.change < 0 }}">{{ '+' if y.change > 0 }}{{ y.change }}%</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p>Data: Central Statistics Office, Residential Property Price Index (houses, 12-month change each January). Built by <a href="https://cianmccaul.vercel.app">Cian McCaul</a>.</p>
+  </footer>
+
+  <script>
+    const chips = [...document.querySelectorAll(".chip")];
+    let picked = ["National"];
+    const $ = (id) => document.getElementById(id);
+    const pct = (n) => (n > 0 ? "+" : "") + n.toFixed(1) + "%";
+
+    function render(s) {
+      $("stats-title").textContent = s.region;
+      $("s-mean").textContent = s.mean + "%";
+      $("s-median").textContent = s.median + "%";
+      $("s-mode").textContent = s.mode.length ? s.mode.map((m) => m + "%").join(", ") : "None";
+      $("s-overall").textContent = pct(s.overall);
+      $("s-facts").innerHTML = "";
+      $("s-facts").append(
+        "Biggest rise: ", Object.assign(document.createElement("b"), { textContent: s.best.change + "%" }), ` in ${s.best.year}. `,
+        "Biggest fall: ", Object.assign(document.createElement("b"), { textContent: s.worst.change + "%" }), ` in ${s.worst.year}.`
+      );
+      $("s-years").innerHTML = "";
+      for (const y of s.years) {
+        const tr = document.createElement("tr");
+        const a = document.createElement("td");
+        a.textContent = y.year;
+        const b = document.createElement("td");
+        b.textContent = pct(y.change);
+        b.className = y.change > 0 ? "up" : y.change < 0 ? "down" : "";
+        tr.append(a, b);
+        $("s-years").append(tr);
+      }
+    }
+
+    async function update() {
+      chips.forEach((c) => {
+        const on = picked.includes(c.dataset.region);
+        c.classList.toggle("on", on);
+        c.setAttribute("aria-pressed", on);
+      });
+      const params = new URLSearchParams(picked.map((r) => ["region", r]));
+      $("graph").src = "/graph.png?" + params;
+      const res = await fetch("/api/summary?" + new URLSearchParams({ region: picked[0] }));
+      if (res.ok) render(await res.json());
+    }
+
+    chips.forEach((chip) =>
+      chip.addEventListener("click", () => {
+        const r = chip.dataset.region;
+        if (picked.includes(r)) {
+          if (picked.length > 1) picked = picked.filter((x) => x !== r);
+        } else {
+          picked = [r, ...picked].slice(0, 4);
+        }
+        update();
+      })
+    );
+
+    // The two accessibility switches from the original project
+    $("dark-toggle").addEventListener("change", (e) => document.documentElement.setAttribute("data-theme", e.target.checked ? "dark" : "light"));
+    $("big-toggle").addEventListener("change", (e) => document.documentElement.classList.toggle("big", e.target.checked));
+  </script>
+</body>
+</html>
