@@ -1,8 +1,12 @@
 # House prices in Ireland, 2011 to 2024
 
-My Leaving Certificate Computer Science project: a Flask site that analyses how Irish house prices changed each year, region by region, using the Central Statistics Office's Residential Property Price Index.
+A Flask site that analyses how Irish house prices changed each year, region by region, from the CSO's Residential Property Price Index.
 
-**Live:** https://irish-house-prices.vercel.app
+**[Live demo](https://irish-house-prices.vercel.app)** · **[Portfolio](https://cianmccaul.vercel.app)**
+
+![The site showing national figures: mean, median, mode and overall change since 2010](docs/screenshot.png)
+
+It started as my Leaving Certificate Computer Science project, using the Central Statistics Office's Residential Property Price Index.
 
 ## What it does
 
@@ -14,7 +18,7 @@ My Leaving Certificate Computer Science project: a Flask site that analyses how 
 
 Some things the data shows: prices fell about 20% nationally in the year to January 2012, rose every year from 2014, and by January 2024 were about 57% above January 2010.
 
-## How it's built
+## How it works
 
 | Part | What it does |
 |---|---|
@@ -34,14 +38,25 @@ Before putting it online I:
 - **Removed the login and sign-up pages:** they saved passwords unprotected in a test database, and you don't need an account to view the analysis. Also removed links to pages that weren't in the project.
 - **Added a new layout, tests and this README.**
 
-## Run it
+## Run it locally
 
 ```
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 flask --app app run      # http://localhost:5000
-pytest
 ```
+
+## Tests
+
+```
+python -m pytest
+```
+
+7 tests (pytest, `tests/test_app.py`): every region has a figure for every year, the national statistics against hand-worked values, the mode with and without repeats, the chained overall change, the page and API, and the graph (a PNG that ignores unknown regions). Use `python -m pytest` rather than plain `pytest`, so Python can find `app.py` from the project folder.
+
+## Built with
+
+Python, Flask, pandas, matplotlib, plain JavaScript and CSS, pytest. Hosted on Vercel.
 
 Data: Central Statistics Office, Ireland.
 
